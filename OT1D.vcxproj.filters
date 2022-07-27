@@ -2,5 +2,18 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pcg\pcg_basic.c">
+      <Filter>pcg</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="pcg">
+      <UniqueIdentifier>{976e61d5-83ea-4941-b3a9-fde3b1090c9b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pcg\pcg_basic.h">
+      <Filter>pcg</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -2,16 +2,10 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <random>
 
-template <typename T>
-T Clamp(T x, T themin, T themax)
-{
-    if (x <= themin)
-        return themin;
-    if (x >= themax)
-        return themax;
-    return x;
-}
+#define DETERMINISTIC() false
+#include "utils.h"
 
 struct PDFUniform
 // y = 1
@@ -152,21 +146,52 @@ struct PDFNumeric
     static bool inline initialized = false;
 };
 
+template <typename PDF1, typename PDF2>
+float PWassersteinDistance(float p, int numSamples = 10000000)
+{
+    // https://www.imagedatascience.com/transport/OTCrashCourse.pdf page 45
+    // Integral from 0 to 1 of abs(ICDF1(x) - ICDF2(x))^p
+    // Then take the result to ^(1/p)
+    pcg32_random_t rng = GetRNG();
+    double ret = 0.0;
+    for (int i = 0; i < numSamples; ++i)
+    {
+        float x = RandomFloat01(rng);
+        float icdf1 = PDF1::ICDF(x);
+        float icdf2 = PDF2::ICDF(x);
+        double y = std::pow(std::abs((double)icdf1 - (double)icdf2), p);
+        ret = Lerp(ret, y, 1.0 / double(i + 1));
+    }
+    return (float)std::pow(ret, 1.0f / p);
+}
+
 int main(int argc, char** argv)
 {
-    float a = PDFNumeric::ICDF(0.5f);
-    float b = PDFNumeric::PDF(a);
+    //float d1 = PWassersteinDistance<PDFUniform, PDFUniform>(1.0f);
+    //printf("%f\n", d1);
+
+    printf("Uniform To Linear = %f\n", PWassersteinDistance<PDFUniform, PDFLinear>(2.0f));
+    printf("Uniform To Quadratic = %f\n", PWassersteinDistance<PDFUniform, PDFQuadratic>(2.0f));
+    printf("Linear To Quadratic = %f\n", PWassersteinDistance<PDFLinear, PDFQuadratic>(2.0f));
+
+    //float d1 = PWassersteinDistance<PDFUniform, PDFLinear>(1.0f);
+    //float d2 = PWassersteinDistance<PDFUniform, PDFLinear>(2.0f);
+    //printf("%f\n%f\n", d1, d2);
 
     return 0;
 }
 
 /*
 TODO:
-- P-wasserstein where people can be 1 or 2 or whatever.
 - interpolate PDFs. show by drawing random numbers from it.
-- measure difference between two pdfs?
-- analytical and tabular or just analytical?
+ ? i think this is by lerping a CDF histogram and interpolating, then drawing from the CDF.
 
+? how to do interpolation between PDFs?
+ * both numerical and analytical.
+
+* do some wasserstein distance analytically (in blog post, but also in general)
+ * woohoo! integration of polynomials. Can integrate each term individually. very easy.
+ * probably need this for analytical interpolation between PDFs.
 
 NOTES:
 - links from email
