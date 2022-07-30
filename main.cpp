@@ -10,9 +10,6 @@
 #include "analytic.h"
 #include "numeric.h"
 
-// y = (x^3-10x^2+5x+11) / 10.417
-// return (x * x * x - 10.0f * x * x + 5 * x + 11) / 10.417f;
-
 template <typename PDF1, typename PDF2>
 float PWassersteinDistance(float p, const PDF1& pdf1, const PDF2& pdf2, int numSamples = 10000000)
 {
@@ -34,19 +31,19 @@ float PWassersteinDistance(float p, const PDF1& pdf1, const PDF2& pdf2, int numS
 
 int main(int argc, char** argv)
 {
-    //float d1 = PWassersteinDistance<PDFUniform, PDFUniform>(1.0f);
-    //printf("%f\n", d1);
 
     printf("Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFLinear()));
     printf("Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFQuadratic()));
-    printf("Linear To Quadratic = %f\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
+    printf("Linear To Quadratic = %f\n\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
 
-    //float d1 = PWassersteinDistance<PDFUniform, PDFLinear>(1.0f);
-    //float d2 = PWassersteinDistance<PDFUniform, PDFLinear>(2.0f);
-    //printf("%f\n%f\n", d1, d2);
+    printf("(table) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
+    printf("(table) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
 
     return 0;
 }
+
+// TODO: do 1 and 3 p too?
 
 /*
 TODO:
