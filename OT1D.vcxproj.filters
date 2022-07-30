@@ -15,5 +15,8 @@
     <ClInclude Include="pcg\pcg_basic.h">
       <Filter>pcg</Filter>
     </ClInclude>
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="analytic.h" />
+    <ClInclude Include="numeric.h" />
   </ItemGroup>
 </Project>

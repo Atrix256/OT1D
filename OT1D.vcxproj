@@ -147,7 +147,10 @@
     <ClCompile Include="pcg\pcg_basic.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="analytic.h" />
+    <ClInclude Include="numeric.h" />
     <ClInclude Include="pcg\pcg_basic.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
