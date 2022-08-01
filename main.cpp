@@ -86,8 +86,10 @@ void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf
     printf("\n");
 }
 
+// TODO: tune numValuesICDF
+
 template <typename PDF1, typename PDF2>
-void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValues = 100)
+void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValuesICDF = 1000000, int numValuesPDF = 100)
 {
     printf("%s...\n", fileName);
 
@@ -95,25 +97,60 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
     std::vector<std::vector<float>> PDFs(numSteps);
     for (int step = 0; step < numSteps; ++step)
     {
-        // TODO: you are supposed to lerp the ICDF....
-
-        // make the CDF
+        // make the ICDF
         float t = float(step) / float(numSteps - 1);
-        std::vector<float> CDF;
-        CDF.resize(numValues + 1, 0.0f);
-        for (int i = 0; i < numValues; ++i)
+        std::vector<float> ICDF;
+        ICDF.resize(numValuesICDF, 0.0f);
+        for (int i = 0; i < numValuesICDF; ++i)
         {
-            float x = float(i) / float(numValues);
-            float y1 = pdf1.CDF(x);
-            float y2 = pdf2.CDF(x);
-            CDF[i] = Lerp(y1, y2, t);
+            float x = float(i) / float(numValuesICDF - 1);
+            float y1 = pdf1.ICDF(x);
+            float y2 = pdf2.ICDF(x);
+            ICDF[i] = Lerp(y1, y2, t);
         }
-        CDF[numValues] = 1.0f;
+        ICDF[numValuesICDF - 1] = 1.0f;
+
+        // make the CDF by inverting the ICDF
+        std::vector<float> CDF;
+        CDF.resize(numValuesPDF + 1, 0.0f);
+        for (int i = 0; i <= numValuesPDF; ++i)
+        {
+            float x = float(i) / float(numValuesPDF);
+
+            auto it = std::lower_bound(ICDF.begin(), ICDF.end(), x);
+            if (it == ICDF.end())
+            {
+                printf("Could not find value %f in ICDF table! (index %i/%i)\n", x, i, numValuesPDF);
+            }
+            else
+            {
+                int upperIndex = int(it - ICDF.begin());
+                int lowerIndex = std::max(upperIndex - 1, 0);
+
+                if (upperIndex == lowerIndex)
+                {
+                    CDF[i] = float(lowerIndex);
+                }
+                else
+                {
+                    float lowerValue = ICDF[lowerIndex];
+                    float upperValue = ICDF[upperIndex];
+
+                    float fraction = (x - lowerValue) / (upperValue - lowerValue);
+
+                    CDF[i] = (float(lowerIndex) + fraction) / float(numValuesPDF);
+                }
+            }
+        }
+
+        // normalize the CDF
+        for (float& f : CDF)
+            f /= CDF[numValuesPDF];
 
         // make the PDF from the CDF
         std::vector<float>& PDF = PDFs[step];
-        PDF.resize(numValues, 0.0f);
-        for (int i = 0; i < numValues; ++i)
+        PDF.resize(numValuesPDF, 0.0f);
+        for (int i = 0; i < numValuesPDF; ++i)
             PDF[i] = CDF[i + 1] - CDF[i];
 
         // normalize the PDF
@@ -132,7 +169,7 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
         fprintf(file, "\"t=%i%%\",", int(100.0f * float(column) / float(numSteps - 1)));
     fprintf(file, "\n");
 
-    for (int row = 0; row < numValues; ++row)
+    for (int row = 0; row < numValuesPDF; ++row)
     {
         for (int column = 0; column < numSteps; ++column)
             fprintf(file, "\"%f\",", PDFs[column][row]);
