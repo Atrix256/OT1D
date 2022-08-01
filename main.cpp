@@ -29,34 +29,96 @@ float PWassersteinDistance(float p, const PDF1& pdf1, const PDF2& pdf2, int numS
     return (float)std::pow(ret, 1.0f / p);
 }
 
+template <typename PDF1, typename PDF2>
+void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValues = 100)
+{
+    // Make the interpolated PDFs
+    std::vector<std::vector<float>> PDFs(numSteps);
+    for (int step = 0; step < numSteps; ++step)
+    {
+        // Make the PDF
+        float t = float(step) / float(numSteps - 1);
+        std::vector<float>& PDF = PDFs[step];
+        PDF.resize(numValues, 0.0f);
+        for (int i = 0; i < numValues; ++i)
+        {
+            float x = float(i) / float(numValues - 1);
+            float y1 = pdf1.PDF(x);
+            float y2 = pdf2.PDF(x);
+            PDF[i] = Lerp(y1, y2, t);
+        }
+
+        // normalize PDF
+        float total = 0.0f;
+        for (float f : PDF)
+            total += f;
+        for (float& f : PDF)
+            f /= total;
+    }
+
+    // Write it to a file
+    FILE* file = nullptr;
+    fopen_s(&file, fileName, "wt");
+
+    for (int column = 0; column < numSteps; ++column)
+        fprintf(file, "\"t=%i%%\",", int(100.0f * float(column) / float(numSteps - 1)));
+    fprintf(file, "\n");
+
+    for (int row = 0; row < numValues; ++row)
+    {
+        for (int column = 0; column < numSteps; ++column)
+            fprintf(file, "\"%f\",", PDFs[column][row]);
+        fprintf(file, "\n");
+    }
+
+    for (int column = 0; column < numSteps; ++column)
+    {
+        float total = 0.0f;
+        for (float f : PDFs[column])
+            total += f;
+
+        printf("Column %i total = %0.2f\n", column, total);
+    }
+
+    fclose(file);
+}
+
 int main(int argc, char** argv)
 {
-    printf("(analytical) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFLinear()));
-    printf("(analytical) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFQuadratic()));
-    printf("(analytical) Linear To Quadratic = %f\n\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
+#if 0
+    printf("(analytical p=2) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFLinear()));
+    printf("(analytical p=2) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFQuadratic()));
+    printf("(analytical p=2) Linear To Quadratic = %f\n\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
 
-    printf("(table) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    printf("(table) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    printf("(table) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=2) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
+    printf("(table p=2) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=2) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
 
-    printf("(p=1) Uniform To Linear = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    printf("(p=1) Uniform To Quadratic = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    printf("(p=1) Linear To Quadratic = %f\n\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=1) Uniform To Linear = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
+    printf("(table p=1) Uniform To Quadratic = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=1) Linear To Quadratic = %f\n\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
 
-    printf("(p=3) Uniform To Linear = %f\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    printf("(p=3) Uniform To Quadratic = %f\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    printf("(p=3) Linear To Quadratic = %f\n\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=3) Uniform To Linear = %f\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
+    printf("(table p=3) Uniform To Quadratic = %f\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=3) Linear To Quadratic = %f\n\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+#endif
 
+    // TODO: do it from 0 to 1 and make an animated gif (have python make individual frames?)
+    InterpolatePDFs_PDF("Uniform2Quadratic_PDF.csv", PDFUniform(), PDFQuadratic());
+    // TODO: ICDF, the above is for PDFs
+    // TODO: do other p values instead of 1.
+    // TODO: do 3 way interpolation. 
 
     return 0;
 }
-
-// TODO: do 1 and 3 p too?
 
 /*
 TODO:
 - interpolate PDFs. show by drawing random numbers from it.
  ? i think this is by lerping a CDF histogram and interpolating, then drawing from the CDF.
+ * try it in other P's.
+ * NOTE: i guess the difference is interpolating CDFs (or ICDFs?) instead of PDFs?
+ * NOTE: link to bezier curves and bezier triangles as other interpolation forms
 
 ? how to do interpolation between PDFs?
  * both numerical and analytical.
