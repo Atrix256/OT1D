@@ -32,6 +32,8 @@ float PWassersteinDistance(float p, const PDF1& pdf1, const PDF2& pdf2, int numS
 template <typename PDF1, typename PDF2>
 void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValues = 100)
 {
+    printf("%s...\n", fileName);
+
     // Make the interpolated PDFs
     std::vector<std::vector<float>> PDFs(numSteps);
     for (int step = 0; step < numSteps; ++step)
@@ -81,6 +83,69 @@ void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf
     }
 
     fclose(file);
+    printf("\n");
+}
+
+// TODO: different p values
+// TODO: how can we show the PDF of the resulting ICDF. Massive sampling? numerical derivatives (differences)?
+template <typename PDF1, typename PDF2>
+void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValues = 100)
+{
+    printf("%s...\n", fileName);
+
+    /*
+    // Make the interpolated PDFs
+    std::vector<std::vector<float>> PDFs(numSteps);
+    for (int step = 0; step < numSteps; ++step)
+    {
+        // Make the PDF
+        float t = float(step) / float(numSteps - 1);
+        std::vector<float>& PDF = PDFs[step];
+        PDF.resize(numValues, 0.0f);
+        for (int i = 0; i < numValues; ++i)
+        {
+            float x = float(i) / float(numValues - 1);
+            float y1 = pdf1.PDF(x);
+            float y2 = pdf2.PDF(x);
+            PDF[i] = Lerp(y1, y2, t);
+        }
+
+        // normalize PDF
+        float total = 0.0f;
+        for (float f : PDF)
+            total += f;
+        for (float& f : PDF)
+            f /= total;
+    }
+
+    // Write it to a file
+    FILE* file = nullptr;
+    fopen_s(&file, fileName, "wt");
+
+    for (int column = 0; column < numSteps; ++column)
+        fprintf(file, "\"t=%i%%\",", int(100.0f * float(column) / float(numSteps - 1)));
+    fprintf(file, "\n");
+
+    for (int row = 0; row < numValues; ++row)
+    {
+        for (int column = 0; column < numSteps; ++column)
+            fprintf(file, "\"%f\",", PDFs[column][row]);
+        fprintf(file, "\n");
+    }
+
+    for (int column = 0; column < numSteps; ++column)
+    {
+        float total = 0.0f;
+        for (float f : PDFs[column])
+            total += f;
+
+        printf("Column %i total = %0.2f\n", column, total);
+    }
+
+    fclose(file);
+    */
+
+    printf("\n");
 }
 
 int main(int argc, char** argv)
@@ -107,13 +172,14 @@ int main(int argc, char** argv)
     printf("(table p=3) Linear To Quadratic = %f\n\n", PWassersteinDistance(3.0f, pdftTableLinear, pdftTableQuadratic));
 #endif
 
-    // TODO: maybe have it interpolate 2 gaussians instead, to show the difference better.
+    PDFNumeric pdftTableGauss1([](float x) { x -= 0.2f; return exp(-x * x / (2.0f * 0.1f * 0.1f)); });
+    PDFNumeric pdftTableGauss2([](float x) { x -= 0.6f; return exp(-x * x / (2.0f * 0.15f * 0.15f)); });
+    InterpolatePDFs_PDF("_Gauss2Gauss_PDF.csv", pdftTableGauss1, pdftTableGauss2);
+    InterpolatePDFs_ICDF("_Gauss2Gauss_ICDF.csv", pdftTableGauss1, pdftTableGauss2);
 
-    // TODO: do it from 0 to 1 and make an animated gif (have python make individual frames?)
-    InterpolatePDFs_PDF("Uniform2Quadratic_PDF.csv", PDFUniform(), PDFQuadratic());
     // TODO: ICDF, the above is for PDFs
     // TODO: do other p values instead of 1.
-    // TODO: do 3 way interpolation. 
+    // TODO: do 3 way interpolation?
 
     return 0;
 }
