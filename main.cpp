@@ -31,13 +31,13 @@ float PWassersteinDistance(float p, const PDF1& pdf1, const PDF2& pdf2, int numS
 
 int main(int argc, char** argv)
 {
-    //printf("Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFLinear()));
-    //printf("Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFQuadratic()));
-    //printf("Linear To Quadratic = %f\n\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
+    printf("(analytical) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFLinear()));
+    printf("(analytical) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFQuadratic()));
+    printf("(analytical) Linear To Quadratic = %f\n\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
 
-    //printf("(table) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    //printf("(table) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    //printf("(table) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
+    printf("(table) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
 
     printf("(p=1) Uniform To Linear = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
     printf("(p=1) Uniform To Quadratic = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
