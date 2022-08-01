@@ -86,31 +86,37 @@ void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf
     printf("\n");
 }
 
-// TODO: different p values
-// TODO: how can we show the PDF of the resulting ICDF. Massive sampling? numerical derivatives (differences)?
 template <typename PDF1, typename PDF2>
 void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValues = 100)
 {
     printf("%s...\n", fileName);
 
-    /*
     // Make the interpolated PDFs
     std::vector<std::vector<float>> PDFs(numSteps);
     for (int step = 0; step < numSteps; ++step)
     {
-        // Make the PDF
+        // TODO: you are supposed to lerp the ICDF....
+
+        // make the CDF
         float t = float(step) / float(numSteps - 1);
+        std::vector<float> CDF;
+        CDF.resize(numValues + 1, 0.0f);
+        for (int i = 0; i < numValues; ++i)
+        {
+            float x = float(i) / float(numValues);
+            float y1 = pdf1.CDF(x);
+            float y2 = pdf2.CDF(x);
+            CDF[i] = Lerp(y1, y2, t);
+        }
+        CDF[numValues] = 1.0f;
+
+        // make the PDF from the CDF
         std::vector<float>& PDF = PDFs[step];
         PDF.resize(numValues, 0.0f);
         for (int i = 0; i < numValues; ++i)
-        {
-            float x = float(i) / float(numValues - 1);
-            float y1 = pdf1.PDF(x);
-            float y2 = pdf2.PDF(x);
-            PDF[i] = Lerp(y1, y2, t);
-        }
+            PDF[i] = CDF[i + 1] - CDF[i];
 
-        // normalize PDF
+        // normalize the PDF
         float total = 0.0f;
         for (float f : PDF)
             total += f;
@@ -133,17 +139,7 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
         fprintf(file, "\n");
     }
 
-    for (int column = 0; column < numSteps; ++column)
-    {
-        float total = 0.0f;
-        for (float f : PDFs[column])
-            total += f;
-
-        printf("Column %i total = %0.2f\n", column, total);
-    }
-
     fclose(file);
-    */
 
     printf("\n");
 }
@@ -175,10 +171,9 @@ int main(int argc, char** argv)
     PDFNumeric pdftTableGauss1([](float x) { x -= 0.2f; return exp(-x * x / (2.0f * 0.1f * 0.1f)); });
     PDFNumeric pdftTableGauss2([](float x) { x -= 0.6f; return exp(-x * x / (2.0f * 0.15f * 0.15f)); });
     InterpolatePDFs_PDF("_Gauss2Gauss_PDF.csv", pdftTableGauss1, pdftTableGauss2);
-    InterpolatePDFs_ICDF("_Gauss2Gauss_ICDF.csv", pdftTableGauss1, pdftTableGauss2);
+    InterpolatePDFs_ICDF("_Gauss2Gauss_CDF.csv", pdftTableGauss1, pdftTableGauss2);
 
-    // TODO: ICDF, the above is for PDFs
-    // TODO: do other p values instead of 1.
+    // TODO: do other p values instead of only 1.
     // TODO: do 3 way interpolation?
 
     return 0;

@@ -13,6 +13,17 @@ struct PDFUniform
         return 1.0f;
     }
 
+    float CDF(float x) const
+    {
+        if (x < c_xmin)
+            return 0.0f;
+
+        if (x > c_xmax)
+            return 1.0f;
+
+        return x;
+    }
+
     float ICDF(float x) const
     {
         if (x < c_xmin)
@@ -38,6 +49,17 @@ struct PDFLinear
         return 2.0f * x;
     }
 
+    float CDF(float x) const
+    {
+        if (x < c_xmin)
+            return 0.0f;
+
+        if (x > c_xmax)
+            return 1.0f;
+
+        return x * x;
+    }
+
     float ICDF(float x) const
     {
         if (x < c_xmin)
@@ -61,6 +83,17 @@ struct PDFQuadratic
         if (x < c_xmin || x > c_xmax)
             return 0.0f;
         return 3.0f * x * x;
+    }
+
+    float CDF(float x) const
+    {
+        if (x < c_xmin)
+            return 0.0f;
+
+        if (x > c_xmax)
+            return 1.0f;
+
+        return x * x * x;
     }
 
     float ICDF(float x) const

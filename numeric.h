@@ -45,6 +45,22 @@ struct PDFNumeric
         return m_PDF(x);
     }
 
+    float CDF(float x) const
+    {
+        if (x < c_xmin)
+            return 0.0f;
+
+        if (x > c_xmax)
+            return 1.0f;
+
+        float index = Clamp(x * float(c_CDFSamples), 0.0f, float(c_CDFSamples - 1));
+
+        int index1 = int(index);
+        int index2 = Clamp(index1 + 1, 0, c_CDFSamples - 1);
+        float fract = index - floor(index);
+        return Lerp(m_CDFTable[index1], m_CDFTable[index2], fract);
+    }
+
     float ICDF(float x) const
     {
         if (x < c_xmin)
