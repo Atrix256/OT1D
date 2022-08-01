@@ -86,22 +86,28 @@ void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf
 int main(int argc, char** argv)
 {
 #if 0
+    PDFNumeric pdftTableUniform([](float x) { return 1.0f; });
+    PDFNumeric pdftTableLinear([](float x) { return 2.0f * x; });
+    PDFNumeric pdftTableQuadratic([](float x) { return 3.0f * x * x; });
+
     printf("(analytical p=2) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFLinear()));
     printf("(analytical p=2) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFUniform(), PDFQuadratic()));
     printf("(analytical p=2) Linear To Quadratic = %f\n\n", PWassersteinDistance<>(2.0f, PDFLinear(), PDFQuadratic()));
 
-    printf("(table p=2) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    printf("(table p=2) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    printf("(table p=2) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=2) Uniform To Linear = %f\n", PWassersteinDistance(2.0f, pdftTableUniform, pdftTableLinear));
+    printf("(table p=2) Uniform To Quadratic = %f\n", PWassersteinDistance(2.0f, pdftTableUniform, pdftTableQuadratic));
+    printf("(table p=2) Linear To Quadratic = %f\n\n", PWassersteinDistance(2.0f, pdftTableLinear, pdftTableQuadratic));
 
-    printf("(table p=1) Uniform To Linear = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    printf("(table p=1) Uniform To Quadratic = %f\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    printf("(table p=1) Linear To Quadratic = %f\n\n", PWassersteinDistance(1.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=1) Uniform To Linear = %f\n", PWassersteinDistance(1.0f, pdftTableUniform, pdftTableLinear));
+    printf("(table p=1) Uniform To Quadratic = %f\n", PWassersteinDistance(1.0f, pdftTableUniform, pdftTableQuadratic));
+    printf("(table p=1) Linear To Quadratic = %f\n\n", PWassersteinDistance(1.0f, pdftTableLinear, pdftTableQuadratic));
 
-    printf("(table p=3) Uniform To Linear = %f\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 2.0f * x; })));
-    printf("(table p=3) Uniform To Quadratic = %f\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 1.0f; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
-    printf("(table p=3) Linear To Quadratic = %f\n\n", PWassersteinDistance(3.0f, PDFNumeric([](float x) { return 2.0f * x; }), PDFNumeric([](float x) { return 3.0f * x * x; })));
+    printf("(table p=3) Uniform To Linear = %f\n", PWassersteinDistance(3.0f, pdftTableUniform, pdftTableLinear));
+    printf("(table p=3) Uniform To Quadratic = %f\n", PWassersteinDistance(3.0f, pdftTableUniform, pdftTableQuadratic));
+    printf("(table p=3) Linear To Quadratic = %f\n\n", PWassersteinDistance(3.0f, pdftTableLinear, pdftTableQuadratic));
 #endif
+
+    // TODO: maybe have it interpolate 2 gaussians instead, to show the difference better.
 
     // TODO: do it from 0 to 1 and make an animated gif (have python make individual frames?)
     InterpolatePDFs_PDF("Uniform2Quadratic_PDF.csv", PDFUniform(), PDFQuadratic());
