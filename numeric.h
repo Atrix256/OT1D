@@ -26,7 +26,7 @@ struct PDFNumeric
             m_CDFTable[cdfIndex] += PDF(x);
         }
 
-        // normalize to sum to 1.0
+        // normalize PDF to sum to 1.0
         float total = 0.0f;
         for (float f : m_CDFTable)
             total += f;
@@ -36,6 +36,10 @@ struct PDFNumeric
         // Make CDF table
         for (int cdfIndex = 1; cdfIndex < c_CDFSamples; ++cdfIndex)
             m_CDFTable[cdfIndex] += m_CDFTable[cdfIndex - 1];
+
+        // normalize CDF so last value is 1.0
+        for (float& f : m_CDFTable)
+            f /= m_CDFTable[c_CDFSamples - 1];
     }
 
     float PDF(float x) const
@@ -77,7 +81,7 @@ struct PDFNumeric
         int lowerIndex = std::max(upperIndex - 1, 0);
 
         if (lowerIndex == upperIndex)
-            return float(lowerIndex);
+            return float(lowerIndex) / float(c_CDFSamples);
 
         float lowerValue = m_CDFTable[lowerIndex];
         float upperValue = m_CDFTable[upperIndex];

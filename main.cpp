@@ -110,6 +110,8 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
         }
         ICDF[numValuesICDF - 1] = 1.0f;
 
+        // TODO: CDF made PDF looks 1 or half a pixel shifted to the left.
+
         // make the CDF by inverting the ICDF
         std::vector<float> CDF;
         CDF.resize(numValuesPDF + 1, 0.0f);
@@ -129,7 +131,7 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
 
                 if (upperIndex == lowerIndex)
                 {
-                    CDF[i] = float(lowerIndex);
+                    CDF[i] = float(lowerIndex) / float(numValuesPDF);
                 }
                 else
                 {
