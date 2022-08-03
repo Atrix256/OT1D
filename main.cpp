@@ -251,5 +251,8 @@ int main(int argc, char** argv)
     InterpolatePDFs_PDF("_Uniform2Quadratic_PDF.csv", PDFUniform(), PDFQuadratic());
     InterpolatePDFs_ICDF("_Uniform2Quadratic_CDF.csv", PDFUniform(), PDFQuadratic());
 
+    InterpolatePDFs_PDF("_Linear2Quadratic_PDF.csv", PDFLinear(), PDFQuadratic());
+    InterpolatePDFs_ICDF("_Linear2Quadratic_CDF.csv", PDFLinear(), PDFQuadratic());
+
     return 0;
 }
