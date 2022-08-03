@@ -86,8 +86,6 @@ void InterpolatePDFs_PDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf
     printf("\n");
 }
 
-// TODO: tune numValuesICDF
-
 template <typename PDF1, typename PDF2>
 void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pdf2, int numSteps = 5, int numValuesICDF = 1000000, int numValuesPDF = 100)
 {
@@ -95,6 +93,7 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
 
     // Make the interpolated PDFs
     std::vector<std::vector<float>> PDFs(numSteps);
+    std::vector<std::vector<float>> CDFs(numSteps);
     for (int step = 0; step < numSteps; ++step)
     {
         // make the ICDF
@@ -110,14 +109,14 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
         }
         ICDF[numValuesICDF - 1] = 1.0f;
 
-        // TODO: CDF made PDF looks 1 or half a pixel shifted to the left.
-
         // make the CDF by inverting the ICDF
-        std::vector<float> CDF;
+        std::vector<float>& CDF = CDFs[step];
         CDF.resize(numValuesPDF + 1, 0.0f);
         for (int i = 0; i <= numValuesPDF; ++i)
         {
-            float x = float(i) / float(numValuesPDF);
+            // we are shifting x over because we get the PDF through forward differencing
+            // which causes an offset
+            float x = (float(i) + 0.5f) / float(numValuesPDF + 1);
 
             auto it = std::lower_bound(ICDF.begin(), ICDF.end(), x);
             if (it == ICDF.end())
@@ -169,12 +168,48 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
 
     for (int column = 0; column < numSteps; ++column)
         fprintf(file, "\"t=%i%%\",", int(100.0f * float(column) / float(numSteps - 1)));
+    fprintf(file, "\"Actual PDF1\",\"Actual PDF2\",");
+    fprintf(file, "\"CDF1\",\"CDF2\",");
+    fprintf(file, "\"Actual CDF1\",\"Actual CDF2\",");
     fprintf(file, "\n");
+
+    // make the actual pdf values
+    std::vector<float> actualPDF1(numValuesPDF, 0.0f);
+    std::vector<float> actualPDF2(numValuesPDF, 0.0f);
+    std::vector<float> actualCDF1(numValuesPDF, 0.0f);
+    std::vector<float> actualCDF2(numValuesPDF, 0.0f);
+    {
+        float total1 = 0.0f;
+        float total2 = 0.0f;
+        for (int row = 0; row < numValuesPDF; ++row)
+        {
+            float x = float(row) / float(numValuesPDF - 1);
+            actualPDF1[row] = pdf1.PDF(x);
+            actualPDF2[row] = pdf2.PDF(x);
+            actualCDF1[row] = pdf1.CDF(x);
+            actualCDF2[row] = pdf2.CDF(x);
+            total1 += actualPDF1[row];
+            total2 += actualPDF2[row];
+        }
+
+        for (float& f : actualPDF1)
+            f /= total1;
+        for (float& f : actualPDF2)
+            f /= total2;
+        for (float& f : actualCDF1)
+            f /= actualCDF1[numValuesPDF - 1];
+        for (float& f : actualCDF2)
+            f /= actualCDF2[numValuesPDF - 1];
+    }
 
     for (int row = 0; row < numValuesPDF; ++row)
     {
         for (int column = 0; column < numSteps; ++column)
             fprintf(file, "\"%f\",", PDFs[column][row]);
+
+        fprintf(file, "\"%f\",\"%f\",", actualPDF1[row], actualPDF2[row]);
+        fprintf(file, "\"%f\",\"%f\",", CDFs[0][row], CDFs[numSteps - 1][row]);
+        fprintf(file, "\"%f\",\"%f\",", actualCDF1[row], actualCDF2[row]);
         fprintf(file, "\n");
     }
 
@@ -185,7 +220,6 @@ void InterpolatePDFs_ICDF(const char* fileName, const PDF1& pdf1, const PDF2& pd
 
 int main(int argc, char** argv)
 {
-#if 0
     PDFNumeric pdftTableUniform([](float x) { return 1.0f; });
     PDFNumeric pdftTableLinear([](float x) { return 2.0f * x; });
     PDFNumeric pdftTableQuadratic([](float x) { return 3.0f * x * x; });
@@ -205,36 +239,17 @@ int main(int argc, char** argv)
     printf("(table p=3) Uniform To Linear = %f\n", PWassersteinDistance(3.0f, pdftTableUniform, pdftTableLinear));
     printf("(table p=3) Uniform To Quadratic = %f\n", PWassersteinDistance(3.0f, pdftTableUniform, pdftTableQuadratic));
     printf("(table p=3) Linear To Quadratic = %f\n\n", PWassersteinDistance(3.0f, pdftTableLinear, pdftTableQuadratic));
-#endif
 
     PDFNumeric pdftTableGauss1([](float x) { x -= 0.2f; return exp(-x * x / (2.0f * 0.1f * 0.1f)); });
     PDFNumeric pdftTableGauss2([](float x) { x -= 0.6f; return exp(-x * x / (2.0f * 0.15f * 0.15f)); });
     InterpolatePDFs_PDF("_Gauss2Gauss_PDF.csv", pdftTableGauss1, pdftTableGauss2);
     InterpolatePDFs_ICDF("_Gauss2Gauss_CDF.csv", pdftTableGauss1, pdftTableGauss2);
 
-    // TODO: do other p values instead of only 1.
-    // TODO: do 3 way interpolation?
+    InterpolatePDFs_PDF("_Uniform2Gauss_PDF.csv", PDFUniform(), pdftTableGauss2);
+    InterpolatePDFs_ICDF("_Uniform2Gauss_CDF.csv", PDFUniform(), pdftTableGauss2);
+
+    InterpolatePDFs_PDF("_Uniform2Quadratic_PDF.csv", PDFUniform(), PDFQuadratic());
+    InterpolatePDFs_ICDF("_Uniform2Quadratic_CDF.csv", PDFUniform(), PDFQuadratic());
 
     return 0;
 }
-
-/*
-TODO:
-- interpolate PDFs. show by drawing random numbers from it.
- ? i think this is by lerping a CDF histogram and interpolating, then drawing from the CDF.
- * try it in other P's.
- * NOTE: i guess the difference is interpolating CDFs (or ICDFs?) instead of PDFs?
- * NOTE: link to bezier curves and bezier triangles as other interpolation forms
-
-? how to do interpolation between PDFs?
- * both numerical and analytical.
-
-* do some wasserstein distance analytically (in blog post, but also in general)
- * woohoo! integration of polynomials. Can integrate each term individually. very easy.
- * probably need this for analytical interpolation between PDFs.
-
-NOTES:
-- links from email
-- link to this for inverted CDF talk: https://blog.demofox.org/2017/08/05/generating-random-numbers-from-a-specific-distribution-by-inverting-the-cdf/
-- this works with tabulated CDFs as well, doesn't have to be analytical.
-*/
